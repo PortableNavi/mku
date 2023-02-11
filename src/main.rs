@@ -15,9 +15,12 @@ use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
 use serenity::utils::Color;
+use songbird::SerenityInit;
 
 use tracing::{error, info};
 
+use cmd::join::*;
+use cmd::play::*;
 use cmd::sing::*;
 
 
@@ -92,7 +95,7 @@ impl EventHandler for MkuHandler
 
 
 #[group]
-#[commands(sing)]
+#[commands(sing, play, join)]
 struct Music;
 
 
@@ -120,11 +123,14 @@ async fn main()
 
     let intends = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
-        | GatewayIntents::MESSAGE_CONTENT;
+        | GatewayIntents::MESSAGE_CONTENT
+        | GatewayIntents::GUILDS
+        | GatewayIntents::GUILD_VOICE_STATES;
 
     let mut client = Client::builder(&token, intends)
         .framework(framework)
         .event_handler(MkuHandler)
+        .register_songbird()
         .await
         .expect("Failed to build client");
 
