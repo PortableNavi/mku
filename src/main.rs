@@ -12,7 +12,6 @@ use serenity::http::Http;
 use serenity::model::application::interaction::{Interaction, InteractionResponseType};
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
-
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
 use serenity::utils::Color;
@@ -53,9 +52,10 @@ impl EventHandler for MkuHandler
         guild_id
             .set_application_commands(&ctx.http, |commands| {
                 commands
-                    .create_application_command(|command| cmd::slash::sing::register(command))
-                    .create_application_command(|command| cmd::slash::join::register(command))
-                    .create_application_command(|command| cmd::slash::play::register(command))
+                    .create_application_command(|command| cmd::sing::register(command))
+                    .create_application_command(|command| cmd::join::register(command))
+                    .create_application_command(|command| cmd::play::register(command))
+                    .create_application_command(|command| cmd::queue::register(command))
             })
             .await
             .expect("Failed to register slash commands");
@@ -74,12 +74,12 @@ impl EventHandler for MkuHandler
         {
             let embed = match command.data.name.as_str()
             {
-                "sing" => cmd::slash::sing::run(&command.data.options, &mut create_embed),
-                "join" => cmd::slash::join::run(&mut create_embed, &ctx, &command).await,
+                "sing" => cmd::sing::run(&command.data.options, &mut create_embed),
+                "join" => cmd::join::run(&mut create_embed, &ctx, &command).await,
+                "queue" => cmd::queue::run(&mut create_embed, &ctx, &command).await,
                 "play" =>
                 {
-                    cmd::slash::play::run(&command.data.options, &mut create_embed, &ctx, &command)
-                        .await
+                    cmd::play::run(&command.data.options, &mut create_embed, &ctx, &command).await
                 }
 
                 _ => create_embed
@@ -90,7 +90,6 @@ impl EventHandler for MkuHandler
                     .color(Color::RED),
             };
 
-            //let guild = ctx.cache.guild(command.guild_id.unwrap()).unwrap();
 
             if let Err(e) = command
                 .create_interaction_response(&ctx.http, |response| {

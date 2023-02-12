@@ -5,7 +5,7 @@ use serenity::async_trait;
 
 use serenity::http::Http;
 
-use serenity::model::channel::Message;
+
 use serenity::model::id::{ChannelId, GuildId};
 use serenity::model::prelude::UserId;
 use serenity::prelude::*;
@@ -139,15 +139,16 @@ pub async fn queue_song(ctx: &Context, guild_id: &GuildId, url: &str) -> Result<
     Ok("".to_string())
 }
 
-pub async fn view_queue(ctx: &Context, msg: &Message) -> Result<String, String>
+pub async fn view_queue(ctx: &Context, guild_id: &GuildId) -> Result<String, String>
 {
-    let guild = msg.guild(&ctx.cache).unwrap();
+    let _guild = ctx.cache.guild(guild_id);
+
     let manager = songbird::get(ctx)
         .await
         .expect("Songbird must be initialized first")
         .clone();
 
-    return if let Some(hlock) = manager.get(guild.id)
+    return if let Some(hlock) = manager.get(guild_id.to_owned())
     {
         let handle = hlock.lock().await;
         let mut response = MessageBuilder::new();
