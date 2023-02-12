@@ -4,29 +4,28 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::{Color, MessageBuilder};
 
-use mku::join_channel;
+use mku::view_queue;
 
 #[command]
-async fn join(ctx: &Context, msg: &Message) -> CommandResult
+async fn queue(ctx: &Context, msg: &Message) -> CommandResult
 {
     let color;
     let mut reponse = MessageBuilder::new();
 
-    let reponse_txt =
-        match join_channel(ctx, &msg.guild_id.unwrap(), &msg.author.id, &msg.channel_id).await
+    let reponse_txt = match view_queue(ctx, msg).await
+    {
+        Ok(resp) =>
         {
-            Ok(resp) =>
-            {
-                color = Color::ROSEWATER;
-                resp
-            }
+            color = Color::ROSEWATER;
+            resp
+        }
 
-            Err(resp) =>
-            {
-                color = Color::RED;
-                resp
-            }
-        };
+        Err(resp) =>
+        {
+            color = Color::RED;
+            resp
+        }
+    };
 
     reponse.push(reponse_txt);
     reponse.build();

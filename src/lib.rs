@@ -6,7 +6,8 @@ use serenity::async_trait;
 use serenity::http::Http;
 
 use serenity::model::channel::Message;
-use serenity::model::id::ChannelId;
+use serenity::model::id::{ChannelId, GuildId};
+use serenity::model::prelude::UserId;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 
@@ -28,12 +29,14 @@ impl VoiceEventHandler for TrackEndNotifier
 {
     async fn act(&self, ctx: &EventContext<'_>) -> Option<Event>
     {
-        if let EventContext::Track(track_list) = ctx
+        if let EventContext::Track(_track_list) = ctx
         {
+            /*
             self.chan_id
                 .say(&self.http, &format!("Tracks ended: {}.", track_list.len()))
                 .await
                 .unwrap();
+            */
         }
 
         None
@@ -41,17 +44,18 @@ impl VoiceEventHandler for TrackEndNotifier
 }
 
 
-pub async fn join_channel(ctx: &Context, msg: &Message) -> Result<String, String>
+pub async fn join_channel(
+    ctx: &Context,
+    guild_id: &GuildId,
+    author_id: &UserId,
+    channel_id: &ChannelId,
+) -> Result<String, String>
 {
-    let guild_id = msg.guild_id.unwrap();
-    let guild = msg.guild(&ctx.cache).unwrap();
+    let guild = ctx.cache.guild(guild_id).unwrap();
 
-    let channel_id = guild
-        .voice_states
-        .get(&msg.author.id)
-        .and_then(|v| v.channel_id);
+    let voice_id = guild.voice_states.get(author_id).and_then(|v| v.channel_id);
 
-    let connection = match channel_id
+    let connection = match voice_id
     {
         Some(channel) => channel,
         None =>
@@ -65,11 +69,11 @@ pub async fn join_channel(ctx: &Context, msg: &Message) -> Result<String, String
         .expect("Songbird must be initialized first")
         .clone();
 
-    let (hlock, success) = manager.join(guild_id, connection).await;
+    let (hlock, success) = manager.join(guild_id.to_owned(), connection).await;
 
     return if let Ok(_) = success
     {
-        let chan_id = msg.channel_id;
+        let chan_id = channel_id.to_owned();
         let http = ctx.http.clone();
         let mut handle = hlock.lock().await;
 
@@ -87,7 +91,7 @@ pub async fn join_channel(ctx: &Context, msg: &Message) -> Result<String, String
 }
 
 
-pub async fn queue_song(ctx: &Context, msg: &Message, url: &str) -> Result<String, String>
+pub async fn queue_song(ctx: &Context, guild_id: &GuildId, url: &str) -> Result<String, String>
 {
     if !url.starts_with("http")
     {
@@ -96,15 +100,12 @@ pub async fn queue_song(ctx: &Context, msg: &Message, url: &str) -> Result<Strin
         );
     }
 
-    let guild_id = msg.guild_id.unwrap();
-    let _guild = msg.guild(&ctx.cache).unwrap();
-
     let manager = songbird::get(ctx)
         .await
         .expect("Songbird must be initialized first.")
         .clone();
 
-    if let Some(hlock) = manager.get(guild_id)
+    if let Some(hlock) = manager.get(guild_id.to_owned())
     {
         let mut handler = hlock.lock().await;
 

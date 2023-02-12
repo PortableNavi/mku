@@ -13,29 +13,30 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
     let mut reponse = MessageBuilder::new();
     let url: String = args.single()?;
 
-    let join_response: String = match mku::join_channel(ctx, msg).await
-    {
-        Ok(_) => match mku::queue_song(ctx, msg, &url).await
+    let join_response: String =
+        match mku::join_channel(ctx, &msg.guild_id.unwrap(), &msg.author.id, &msg.channel_id).await
         {
-            Ok(resp) =>
+            Ok(_) => match mku::queue_song(ctx, &msg.guild_id.unwrap(), &url).await
             {
-                color = Color::ROSEWATER;
-                resp
-            }
+                Ok(resp) =>
+                {
+                    color = Color::ROSEWATER;
+                    resp
+                }
+
+                Err(resp) =>
+                {
+                    color = Color::RED;
+                    resp
+                }
+            },
 
             Err(resp) =>
             {
                 color = Color::RED;
                 resp
             }
-        },
-
-        Err(resp) =>
-        {
-            color = Color::RED;
-            resp
-        }
-    };
+        };
 
     reponse.push(join_response);
     reponse.build();

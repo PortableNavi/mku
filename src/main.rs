@@ -12,6 +12,7 @@ use serenity::http::Http;
 use serenity::model::application::interaction::{Interaction, InteractionResponseType};
 use serenity::model::event::ResumedEvent;
 use serenity::model::gateway::Ready;
+
 use serenity::model::id::GuildId;
 use serenity::prelude::*;
 use serenity::utils::Color;
@@ -21,6 +22,7 @@ use tracing::{error, info};
 
 use cmd::join::*;
 use cmd::play::*;
+use cmd::queue::*;
 use cmd::sing::*;
 
 
@@ -50,7 +52,10 @@ impl EventHandler for MkuHandler
 
         guild_id
             .set_application_commands(&ctx.http, |commands| {
-                commands.create_application_command(|command| cmd::slash::sing::register(command))
+                commands
+                    .create_application_command(|command| cmd::slash::sing::register(command))
+                    .create_application_command(|command| cmd::slash::join::register(command))
+                    .create_application_command(|command| cmd::slash::play::register(command))
             })
             .await
             .expect("Failed to register slash commands");
@@ -70,6 +75,12 @@ impl EventHandler for MkuHandler
             let embed = match command.data.name.as_str()
             {
                 "sing" => cmd::slash::sing::run(&command.data.options, &mut create_embed),
+                "join" => cmd::slash::join::run(&mut create_embed, &ctx, &command).await,
+                "play" =>
+                {
+                    cmd::slash::play::run(&command.data.options, &mut create_embed, &ctx, &command)
+                        .await
+                }
 
                 _ => create_embed
                     .title("Ups...")
@@ -78,6 +89,8 @@ impl EventHandler for MkuHandler
                     )
                     .color(Color::RED),
             };
+
+            //let guild = ctx.cache.guild(command.guild_id.unwrap()).unwrap();
 
             if let Err(e) = command
                 .create_interaction_response(&ctx.http, |response| {
@@ -95,7 +108,7 @@ impl EventHandler for MkuHandler
 
 
 #[group]
-#[commands(sing, play, join)]
+#[commands(sing, play, join, queue)]
 struct Music;
 
 
