@@ -23,6 +23,7 @@ use cmd::join::*;
 use cmd::play::*;
 use cmd::queue::*;
 use cmd::sing::*;
+use cmd::skip::*;
 
 
 pub struct MkuShardManagerContainer;
@@ -56,6 +57,7 @@ impl EventHandler for MkuHandler
                     .create_application_command(|command| cmd::join::register(command))
                     .create_application_command(|command| cmd::play::register(command))
                     .create_application_command(|command| cmd::queue::register(command))
+                    .create_application_command(|command| cmd::skip::register(command))
             })
             .await
             .expect("Failed to register slash commands");
@@ -77,6 +79,7 @@ impl EventHandler for MkuHandler
                 "sing" => cmd::sing::run(&command.data.options, &mut create_embed),
                 "join" => cmd::join::run(&mut create_embed, &ctx, &command).await,
                 "queue" => cmd::queue::run(&mut create_embed, &ctx, &command).await,
+                "skip" => cmd::skip::run(&mut create_embed, &ctx, &command).await,
                 "play" =>
                 {
                     cmd::play::run(&command.data.options, &mut create_embed, &ctx, &command).await
@@ -107,7 +110,7 @@ impl EventHandler for MkuHandler
 
 
 #[group]
-#[commands(sing, play, join, queue)]
+#[commands(sing, play, join, queue, skip)]
 struct Music;
 
 
